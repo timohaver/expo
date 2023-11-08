@@ -114,6 +114,7 @@ async function packExpoDependency(
 
 async function copyCommonFixturesToProject(
   projectRoot: string,
+  fileList: string[],
   {
     appJsFileName,
     repoRoot,
@@ -132,23 +133,12 @@ async function copyCommonFixturesToProject(
   // pack up project files
   const projectFilesSourcePath = path.join(dirName, '..', 'fixtures', 'project_files');
   const projectFilesTarballPath = path.join(projectRoot, 'project_files.tgz');
-  await spawnAsync(
-    'tar',
-    [
-      'zcf',
-      projectFilesTarballPath,
-      'tsconfig.json',
-      '.detoxrc.json',
-      'eas.json',
-      'eas-hooks',
-      'e2e',
-      'scripts',
-    ],
-    {
-      cwd: projectFilesSourcePath,
-      stdio: 'inherit',
-    }
-  );
+  const tarArgs = ['zcf', projectFilesTarballPath, ...fileList];
+
+  await spawnAsync('tar', tarArgs, {
+    cwd: projectFilesSourcePath,
+    stdio: 'inherit',
+  });
 
   // unpack project files in project directory
   await spawnAsync('tar', ['zxf', projectFilesTarballPath], {
@@ -601,7 +591,11 @@ export async function setupE2EAppAsync(
   projectRoot: string,
   { localCliBin, repoRoot, isTV = false }: { localCliBin: string; repoRoot: string; isTV?: boolean }
 ) {
-  await copyCommonFixturesToProject(projectRoot, { appJsFileName: 'App.tsx', repoRoot, isTV });
+  await copyCommonFixturesToProject(
+    projectRoot,
+    ['tsconfig.json', '.detoxrc.json', 'eas.json', 'eas-hooks', 'e2e', 'scripts'],
+    { appJsFileName: 'App.tsx', repoRoot, isTV }
+  );
 
   // copy png assets and install extra package
   await fs.copyFile(
@@ -620,17 +614,11 @@ export async function setupE2EAppAsync(
   );
 }
 
-export async function setupManualTestAppAsync(projectRoot: string) {
-  // Copy API test app to project
-  await fs.rm(path.join(projectRoot, 'App.tsx'));
-  await fs.copyFile(
-    path.resolve(dirName, '..', 'fixtures', 'App-apitest.tsx'),
-    path.join(projectRoot, 'App.tsx')
-  );
-  // Copy tsconfig.json to project
-  await fs.rm(path.join(projectRoot, 'tsconfig.json'));
-  await fs.copyFile(
-    path.resolve(dirName, '..', 'fixtures', 'project_files', 'tsconfig.json'),
-    path.join(projectRoot, 'tsconfig.json')
+export async function setupManualTestAppAsync(projectRoot: string, repoRoot:string) {
+  // Copy API test app and other fixtures to project
+  await copyCommonFixturesToProject(
+    projectRoot,
+    ['tsconfig.json', 'assetsInUpdates', 'embeddedAssets'],
+    { appJsFileName: 'App-apitest.tsx', repoRoot, isTV: false }
   );
 }

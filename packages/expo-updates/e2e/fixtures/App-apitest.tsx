@@ -1,132 +1,100 @@
 /**
  * Test app that shows some features of the Updates API
  */
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as Updates from 'expo-updates';
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import {
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Image,
+  Text,
+  View,
+} from 'react-native';
+import { useFonts } from 'expo-font';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const [showingView1, setShowingView1] = useState(true);
-  const [showingView2, setShowingView2] = useState(false);
-  return (
-    <View style={styles.container}>
-      <Text style={styles.titleText}>Updates JS API test</Text>
-      <Pressable
-        style={styles.button}
-        onPress={() => setShowingView1((showingView1) => !showingView1)}>
-        <Text style={styles.buttonText}>Toggle view 1</Text>
-      </Pressable>
-      <Pressable
-        style={styles.button}
-        onPress={() => setShowingView2((showingView2) => !showingView2)}>
-        <Text style={styles.buttonText}>Toggle view 2</Text>
-      </Pressable>
-      {showingView1 ? <UpdatesStatusView index={1} /> : null}
-      {showingView2 ? <UpdatesStatusView index={2} /> : null}
-    </View>
-  );
-}
+  const {
+    currentlyRunning,
+    isUpdateAvailable,
+    isUpdatePending,
+    availableUpdate,
+  } = Updates.useUpdates();
 
-function UpdatesStatusView(props: { index: number }) {
-  const [updateMessage, setUpdateMessage] = React.useState('');
-  const [isRollback, setIsRollback] = React.useState(false);
-  const [noUpdateReason, setNoUpdateReason] = React.useState('');
+  const [fontLoaded, fontError] = useFonts({
+    Abel_400Regular: require('./embeddedAssets/Abel_400Regular.ttf'),
+    HankenGrotesk_300Light: require('./embeddedAssets/HankenGrotesk_300Light.ttf'),
+    // Roboto_700Bold: require('./assets/Roboto_700Bold.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontError || fontLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontError, fontLoaded]);
 
   // Displays a message showing whether or not the app is running
   // a downloaded update
   const runTypeMessage =
-    `isEmbeddedLaunch = ${Updates.isEmbeddedLaunch}\n` + `noUpdateReason = ${noUpdateReason}`;
+    __DEV__ && Updates.channel === null
+      ? 'This app is running in dev mode '
+      : currentlyRunning.isEmbeddedLaunch
+      ? 'This app is running from built-in code'
+      : 'This app is running an update';
 
-  const checkAutomaticallyMessage = `Automatic check setting = ${Updates.checkAutomatically}`;
-
-  const {
-    isUpdateAvailable,
-    isUpdatePending,
-    isChecking,
-    isDownloading,
-    availableUpdate,
-    checkError,
-    downloadError,
-    lastCheckForUpdateTimeSinceRestart,
-  } = Updates.useUpdates();
-
-  useEffect(() => {
-    const handleAsync = async () => {
-      setIsRollback(availableUpdate?.type === Updates.UpdateInfoType.ROLLBACK);
-    };
-    if (isUpdateAvailable) {
-      handleAsync();
-    }
-  }, [isUpdateAvailable]);
-
-  useEffect(() => {
-    const checkingMessage = isChecking ? 'Checking for an update...\n' : '';
-    const downloadingMessage = isDownloading ? 'Downloading...\n' : '';
-    const availableMessage = isUpdateAvailable
-      ? isRollback
-        ? `Rollback directive found, created at ${
-            availableUpdate?.createdAt.toLocaleString() ?? ''
-          }\n`
-        : `Found a new update: manifest = \n${manifestToString(availableUpdate?.manifest)}...` +
-          '\n'
-      : 'No new update available\n';
-    const checkErrorMessage = checkError ? `Error in check: ${checkError.message}\n` : '';
-    const downloadErrorMessage = downloadError ? `Error in check: ${downloadError.message}\n` : '';
-    const lastCheckTimeMessage = lastCheckForUpdateTimeSinceRestart
-      ? `Last check: ${lastCheckForUpdateTimeSinceRestart.toLocaleString() ?? ''}\n`
-      : '';
-    setUpdateMessage(
-      checkingMessage +
-        downloadingMessage +
-        availableMessage +
-        checkErrorMessage +
-        downloadErrorMessage +
-        lastCheckTimeMessage
-    );
-  }, [
-    isUpdateAvailable,
-    isUpdatePending,
-    isChecking,
-    isDownloading,
-    checkError,
-    downloadError,
-    isRollback,
-  ]);
-
-  useEffect(() => {
-    const handleReloadAsync = async () => {
-      let countdown = 5;
-      while (countdown > 0) {
-        setUpdateMessage(`Downloaded update... launching it in ${countdown} seconds.`);
-        countdown = countdown - 1;
-        await delay(1000);
-      }
-      await Updates.reloadAsync();
-    };
-    if (isUpdatePending) {
-      handleReloadAsync();
-    }
-  }, [isUpdatePending]);
+  const updateMessage = isUpdateAvailable
+    ? `checkForUpdateAsync found a new update: manifest = \n${manifestToString(
+        availableUpdate?.manifest,
+      )}...`
+    : 'No new update available';
 
   const handleCheckButtonPress = () => {
-    Updates.checkForUpdateAsync().then((result) => {
-      if (result.isAvailable === false) {
-        setNoUpdateReason(result.reason ?? '');
-      }
-    });
+    Updates.checkForUpdateAsync().catch((_error) => {});
   };
 
   const handleDownloadButtonPress = () => {
-    Updates.fetchUpdateAsync();
+    Updates.fetchUpdateAsync().catch((_error) => {});
   };
 
+  const handleRunButtonPress = () => {
+    Updates.reloadAsync().catch((_error) => {});
+  };
+
+  if (!fontError && !fontLoaded) {
+    return null;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>View {props.index}</Text>
-      <Text>{runTypeMessage}</Text>
-      <Text>{checkAutomaticallyMessage}</Text>
+    <SafeAreaView style={styles.container}>
+      <Image
+        source={require('./embeddedAssets/dougheadshot.jpg')}
+        height={100}
+        width={100}
+        style={{ height: 100, width: 100 }}
+      />
+      <Image
+        source={require('./assetsInUpdates/coffee-prep.jpg')}
+        height={100}
+        width={100}
+        style={{ height: 100, width: 100 }}
+      />
+      <Text style={styles.titleText}>Updates JS API test</Text>
       <Text> </Text>
+      <Text>{runTypeMessage}</Text>
+      <Text> </Text>
+      {fontError ? (
+        <Text>{`Font error: ${fontError}`}</Text>
+      ) : (
+        <View>
+          <Text style={styles.abelText}>Abel success</Text>
+          <Text style={styles.hankenText}>Hanken success</Text>
+          {/* <Text style={styles.robotoText}>Roboto success</Text> */}
+        </View>
+      )}
       <Text style={styles.titleText}>Status</Text>
       <Text style={styles.updateMessageText}>{updateMessage}</Text>
       <Pressable style={styles.button} onPress={handleCheckButtonPress}>
@@ -137,8 +105,13 @@ function UpdatesStatusView(props: { index: number }) {
           <Text style={styles.buttonText}>Download update</Text>
         </Pressable>
       ) : null}
+      {isUpdatePending ? (
+        <Pressable style={styles.button} onPress={handleRunButtonPress}>
+          <Text style={styles.buttonText}>Run update</Text>
+        </Pressable>
+      ) : null}
       <StatusBar style="auto" />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -147,7 +120,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
   button: {
     alignItems: 'center',
@@ -167,13 +140,25 @@ const styles = StyleSheet.create({
     height: 100,
     paddingVertical: 12,
     paddingHorizontal: 32,
-    width: 250,
+    width: '90%',
     borderColor: '#4630EB',
     borderWidth: 1,
     borderRadius: 4,
   },
   titleText: {
     fontWeight: 'bold',
+  },
+  abelText: {
+    fontFamily: 'Abel_400Regular',
+    alignSelf: 'center',
+  },
+  hankenText: {
+    fontFamily: 'HankenGrotesk_300Light',
+    alignSelf: 'center',
+  },
+  robotoText: {
+    fontFamily: 'Roboto_700Bold',
+    alignSelf: 'center',
   },
 });
 
@@ -190,16 +175,15 @@ const delay = (timeout: number) => {
   });
 };
 
-const manifestToString = (manifest?: Updates.Manifest) => {
+const manifestToString = (manifest?: any) => {
   return manifest
     ? JSON.stringify(
         {
           id: manifest.id,
           createdAt: manifest.createdAt,
-          // metadata: manifest.metadata,
         },
         null,
-        2
+        2,
       )
     : 'null';
 };
