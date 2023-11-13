@@ -1949,6 +1949,7 @@ PODS:
   - ABI49_0_0React-jsc/Fabric (0.72.4):
     - ABI49_0_0React-jsi (= 0.72.4)
   - ABI49_0_0React-jsi (0.72.4):
+    - ABI49_0_0hermes-engine
     - boost (= 1.76.0)
     - DoubleConversion
     - glog
@@ -2236,7 +2237,7 @@ PODS:
     - ExpoModulesCore
   - EXPermissions (14.2.1):
     - ExpoModulesCore
-  - Expo (49.0.17):
+  - Expo (49.0.18):
     - ExpoModulesCore
   - ExpoAppleAuthentication (6.1.0):
     - ExpoModulesCore
@@ -4848,7 +4849,7 @@ SPEC CHECKSUMS:
   ABI49_0_0React-debug: d964e2660e1f189b51ddc117d38c69c3430d7000
   ABI49_0_0React-hermes: 221e2a65008a2ee99b112c908fc88cfd3f944900
   ABI49_0_0React-jsc: 681c9e048a4cac7fe6bad3b44068092fb653c7d4
-  ABI49_0_0React-jsi: 12b0bd606bbf6582987fd99fff13faa47beaf593
+  ABI49_0_0React-jsi: 3a8829946899c357da3b60d596905d5e48288de4
   ABI49_0_0React-jsiexecutor: 917db9227eb80e64bd0fca88d9a91604c781e1c8
   ABI49_0_0React-jsinspector: e2458e307f4208e402869557b2a4517b97cefc0b
   ABI49_0_0React-logger: ddcf120c9d5abd974477d3bb19d209e54d52116e
@@ -4911,7 +4912,7 @@ SPEC CHECKSUMS:
   EXMediaLibrary: 8ac14ce76f266026b10cac2ab049debe032d7ae7
   EXNotifications: 09394cbd7165f9a4a00a53328aa09bf874bae717
   EXPermissions: 4f80cf527001aa408a22eddf076e61465ea71d5a
-  Expo: 61f0ce2461122eb405d373e512a0dbc79804001a
+  Expo: f446f9811b9dfc0abc05a1613966c8475bc6795e
   ExpoAppleAuthentication: 7bdf1a2962ebfe9b00eb4183a17b78d736e57185
   ExpoBattery: e9d7a71960cbc40733d956a29f8ba240173feb08
   ExpoBlur: a2c90bdfa4ff9f459cdb0f83191bddf020e3e2db
