@@ -1,7 +1,6 @@
 import { css } from '@emotion/react';
-import { LinkBase, theme, Button } from '@expo/styleguide';
+import { theme } from '@expo/styleguide';
 import { breakpoints } from '@expo/styleguide-base';
-import { ArrowLeftIcon, ArrowRightIcon } from '@expo/styleguide-icons';
 import { useRouter } from 'next/compat/router';
 import { useEffect, useState, createRef } from 'react';
 
@@ -13,12 +12,13 @@ import DocumentationSidebarRight, {
 } from '~/components/DocumentationSidebarRight';
 import Head from '~/components/Head';
 import { usePageApiVersion } from '~/providers/page-api-version';
+import { NavigationRoute } from '~/types/common';
 import { Footer } from '~/ui/components/Footer';
 import { Header } from '~/ui/components/Header';
 import { PageTitle } from '~/ui/components/PageTitle';
 import { Separator } from '~/ui/components/Separator';
 import { Sidebar } from '~/ui/components/Sidebar';
-import { CALLOUT, P } from '~/ui/components/Text';
+import { P } from '~/ui/components/Text';
 
 const STYLES_DOCUMENT = css`
   background: ${theme.background.default};
@@ -40,6 +40,12 @@ type Props = React.PropsWithChildren<{
   /** If the page should not show up in the Algolia Docsearch results */
   hideFromSearch?: boolean;
 }>;
+
+function appendSectionToEntry(route?: NavigationRoute) {
+  return route?.children?.map(entry =>
+    Object.assign(entry, { section: route.type !== 'page' ? route.name : undefined })
+  );
+}
 
 export default function DocumentationPage({
   title,
@@ -107,9 +113,9 @@ export default function DocumentationPage({
   );
 
   const flattenStructure = routes
-    .map(route => route.children)
+    .map(route => appendSectionToEntry(route))
     .flat()
-    .map(route => (route?.type === 'page' ? route : route?.children))
+    .map(route => (route?.type === 'page' ? route : appendSectionToEntry(route)))
     .flat();
 
   const pageIndex = flattenStructure.findIndex(page => page?.name === title);
@@ -159,29 +165,15 @@ export default function DocumentationPage({
         )}
         {title && <Separator />}
         {children}
-        {title && (previousPage || nextPage) && (
-          <div className="flex justify-between mt-10 max-xl-gutters:flex-col gap-4">
-            {previousPage && (
-              <LinkBase href={previousPage.href}>
-                <Button theme="secondary" leftSlot={<ArrowLeftIcon />} skipCapitalization>
-                  <CALLOUT className="max-w-[250px] text-ellipsis overflow-hidden max-xl-gutters:max-w-[100%]">
-                    {previousPage.name}
-                  </CALLOUT>
-                </Button>
-              </LinkBase>
-            )}
-            {nextPage && (
-              <LinkBase href={nextPage.href}>
-                <Button theme="secondary" rightSlot={<ArrowRightIcon />} skipCapitalization>
-                  <CALLOUT className="max-w-[250px] text-ellipsis overflow-hidden max-xl-gutters:max-w-[100%]">
-                    {nextPage.name}
-                  </CALLOUT>
-                </Button>
-              </LinkBase>
-            )}
-          </div>
+        {title && (
+          <Footer
+            title={title}
+            sourceCodeUrl={sourceCodeUrl}
+            packageName={packageName}
+            previousPage={previousPage}
+            nextPage={nextPage}
+          />
         )}
-        {title && <Footer title={title} sourceCodeUrl={sourceCodeUrl} packageName={packageName} />}
       </div>
     </DocumentationNestedScrollLayout>
   );
