@@ -1,11 +1,11 @@
 import { css } from '@emotion/react';
-import { theme } from '@expo/styleguide';
+import { LinkBase, theme, Button } from '@expo/styleguide';
 import { breakpoints } from '@expo/styleguide-base';
+import { ArrowLeftIcon, ArrowRightIcon } from '@expo/styleguide-icons';
 import { useRouter } from 'next/compat/router';
 import { useEffect, useState, createRef } from 'react';
 
 import * as RoutesUtils from '~/common/routes';
-import * as Utilities from '~/common/utilities';
 import * as WindowUtils from '~/common/window';
 import DocumentationNestedScrollLayout from '~/components/DocumentationNestedScrollLayout';
 import DocumentationSidebarRight, {
@@ -18,7 +18,7 @@ import { Header } from '~/ui/components/Header';
 import { PageTitle } from '~/ui/components/PageTitle';
 import { Separator } from '~/ui/components/Separator';
 import { Sidebar } from '~/ui/components/Sidebar';
-import { P } from '~/ui/components/Text';
+import { CALLOUT, P } from '~/ui/components/Text';
 
 const STYLES_DOCUMENT = css`
   background: ${theme.background.default};
@@ -41,24 +41,24 @@ type Props = React.PropsWithChildren<{
   hideFromSearch?: boolean;
 }>;
 
-const getCanonicalUrl = (path: string) => {
-  if (RoutesUtils.isReferencePath(path)) {
-    return `https://docs.expo.dev${Utilities.replaceVersionInUrl(path, 'latest')}`;
-  } else {
-    return `https://docs.expo.dev${path}`;
-  }
-};
-
-export default function DocumentationPage(props: Props) {
+export default function DocumentationPage({
+  title,
+  description,
+  packageName,
+  sourceCodeUrl,
+  iconUrl,
+  children,
+  hideFromSearch,
+  tocVisible,
+}: Props) {
+  const [isMobileMenuVisible, setMobileMenuVisible] = useState(false);
   const { version } = usePageApiVersion();
   const router = useRouter();
-  const pathname = router?.pathname ?? '/';
 
   const layoutRef = createRef<DocumentationNestedScrollLayout>();
   const sidebarRightRef = createRef<SidebarRightComponentType>();
 
-  const [isMobileMenuVisible, setMobileMenuVisible] = useState(false);
-
+  const pathname = router?.pathname ?? '/';
   const routes = RoutesUtils.getRoutes(pathname, version);
   const sidebarActiveGroup = RoutesUtils.getPageSection(pathname);
   const sidebarScrollPosition = process.browser ? window.__sidebarScroll : 0;
@@ -106,6 +106,16 @@ export default function DocumentationPage(props: Props) {
     />
   );
 
+  const flattenStructure = routes
+    .map(route => route.children)
+    .flat()
+    .map(route => (route?.type === 'page' ? route : route?.children))
+    .flat();
+
+  const pageIndex = flattenStructure.findIndex(page => page?.name === title);
+  const previousPage = flattenStructure[pageIndex - 1];
+  const nextPage = flattenStructure[pageIndex + 1];
+
   return (
     <DocumentationNestedScrollLayout
       ref={layoutRef}
@@ -113,15 +123,17 @@ export default function DocumentationPage(props: Props) {
       sidebar={sidebarElement}
       sidebarRight={sidebarRightElement}
       sidebarActiveGroup={sidebarActiveGroup}
-      tocVisible={props.tocVisible}
+      tocVisible={tocVisible}
       isMobileMenuVisible={isMobileMenuVisible}
       onContentScroll={handleContentScroll}
       sidebarScrollPosition={sidebarScrollPosition}>
       <Head
-        title={props.title}
-        description={props.description}
-        canonicalUrl={version !== 'unversioned' ? getCanonicalUrl(pathname) : undefined}>
-        {props.hideFromSearch !== true && (
+        title={title}
+        description={description}
+        canonicalUrl={
+          version !== 'unversioned' ? RoutesUtils.getCanonicalUrl(pathname) : undefined
+        }>
+        {hideFromSearch !== true && (
           <meta
             name="docsearch:version"
             content={RoutesUtils.isReferencePath(pathname) ? version : 'none'}
@@ -132,28 +144,44 @@ export default function DocumentationPage(props: Props) {
           RoutesUtils.isArchivePath(pathname)) && <meta name="robots" content="noindex" />}
       </Head>
       <div css={STYLES_DOCUMENT}>
-        {props.title && (
+        {title && (
           <PageTitle
-            title={props.title}
-            sourceCodeUrl={props.sourceCodeUrl}
-            packageName={props.packageName}
-            iconUrl={props.iconUrl}
+            title={title}
+            sourceCodeUrl={sourceCodeUrl}
+            packageName={packageName}
+            iconUrl={iconUrl}
           />
         )}
-        {props.description && (
+        {description && (
           <P theme="secondary" data-description="true">
-            {props.description}
+            {description}
           </P>
         )}
-        {props.title && <Separator />}
-        {props.children}
-        {props.title && (
-          <Footer
-            title={props.title}
-            sourceCodeUrl={props.sourceCodeUrl}
-            packageName={props.packageName}
-          />
+        {title && <Separator />}
+        {children}
+        {title && (previousPage || nextPage) && (
+          <div className="flex justify-between mt-10 max-xl-gutters:flex-col gap-4">
+            {previousPage && (
+              <LinkBase href={previousPage.href}>
+                <Button theme="secondary" leftSlot={<ArrowLeftIcon />} skipCapitalization>
+                  <CALLOUT className="max-w-[250px] text-ellipsis overflow-hidden max-xl-gutters:max-w-[100%]">
+                    {previousPage.name}
+                  </CALLOUT>
+                </Button>
+              </LinkBase>
+            )}
+            {nextPage && (
+              <LinkBase href={nextPage.href}>
+                <Button theme="secondary" rightSlot={<ArrowRightIcon />} skipCapitalization>
+                  <CALLOUT className="max-w-[250px] text-ellipsis overflow-hidden max-xl-gutters:max-w-[100%]">
+                    {nextPage.name}
+                  </CALLOUT>
+                </Button>
+              </LinkBase>
+            )}
+          </div>
         )}
+        {title && <Footer title={title} sourceCodeUrl={sourceCodeUrl} packageName={packageName} />}
       </div>
     </DocumentationNestedScrollLayout>
   );
